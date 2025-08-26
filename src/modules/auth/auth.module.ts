@@ -19,16 +19,8 @@ import { UuidAdapter } from './adapters/out/security/uuid.adapter';
 
 import { UserPrismaRepository } from './adapters/out/persistence/user.prisma.repository';
 import { RefreshTokenPrismaRepository, PasswordResetTokenPrismaRepository } from './adapters/out/persistence/token.prisma.repository';
-
-// Tokens de inyección para puertos/repos de dominio
-export const USER_REPO = 'USER_REPO';
-export const REFRESH_REPO = 'REFRESH_REPO';
-export const RESET_REPO = 'RESET_REPO';
-export const HASHER = 'HASHER';
-export const TOKEN = 'TOKEN';
-export const NOTIFIER = 'NOTIFIER';
-export const UUID = 'UUID';
-export const CLOCK = 'CLOCK';
+import { MailService } from '../shared/mail/mail.service';
+import { USER_REPO, REFRESH_REPO, RESET_REPO, HASHER, TOKEN, NOTIFIER, UUID, CLOCK } from './tokens';
 
 class SystemClock {
   now() { return new Date(); }
@@ -63,7 +55,9 @@ class SystemClock {
     { provide: USER_REPO, useClass: UserPrismaRepository },
     { provide: REFRESH_REPO, useClass: RefreshTokenPrismaRepository },
     { provide: RESET_REPO, useClass: PasswordResetTokenPrismaRepository },
-
+    
+    // Servicios
+    MailService,
     // Bindings a puertos usados en handlers
     // Nota: En handlers inyecta interfaces, aquí resolvemos con tokens + useExisting o @Inject(token) en constructor
   ],

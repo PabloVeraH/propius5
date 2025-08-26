@@ -1,16 +1,18 @@
+import { Inject } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { ResetPasswordCommand } from '../commands/reset-password.command';
 import { PasswordResetTokenRepository } from '../../domain/repositories/tokens.repository';
 import { HasherPort } from '../ports/hasher.port';
 import { UserRepository } from '../../domain/repositories/user.repository';
 import { PasswordPolicyViolationError } from '../../domain/exceptions/domain.exceptions';
+import { USER_REPO, HASHER, REFRESH_REPO } from '../../tokens';
 
 @CommandHandler(ResetPasswordCommand)
 export class ResetPasswordHandler implements ICommandHandler<ResetPasswordCommand> {
   constructor(
-    private readonly resetRepo: PasswordResetTokenRepository,
-    private readonly hasher: HasherPort,
-    private readonly users: UserRepository
+    @Inject(REFRESH_REPO) private readonly resetRepo: PasswordResetTokenRepository,
+    @Inject(HASHER) private readonly hasher: HasherPort,
+    @Inject(USER_REPO) private readonly users: UserRepository
   ) {}
 
   async execute(cmd: ResetPasswordCommand): Promise<void> {

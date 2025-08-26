@@ -1,3 +1,4 @@
+import { Inject } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RefreshTokenCommand } from '../commands/refresh-token.command';
 import { TokenPort } from '../ports/token.port';
@@ -6,15 +7,16 @@ import { HasherPort } from '../ports/hasher.port';
 import { UserRepository } from '../../domain/repositories/user.repository';
 import { InvalidCredentialsError, TokenInvalidOrExpiredError } from '../../domain/exceptions/domain.exceptions';
 import { UuidPort } from '../ports/uuid.port';
+import { USER_REPO, HASHER, TOKEN, REFRESH_REPO, UUID } from '../../tokens';
 
 @CommandHandler(RefreshTokenCommand)
 export class RefreshTokenHandler implements ICommandHandler<RefreshTokenCommand> {
   constructor(
-    private readonly tokens: TokenPort,
-    private readonly refreshRepo: RefreshTokenRepository,
-    private readonly hasher: HasherPort,
-    private readonly users: UserRepository,
-    private readonly uuid: UuidPort
+    @Inject(TOKEN) private readonly tokens: TokenPort,
+    @Inject(REFRESH_REPO) private readonly refreshRepo: RefreshTokenRepository,
+    @Inject(HASHER) private readonly hasher: HasherPort,
+    @Inject(USER_REPO) private readonly users: UserRepository,
+    @Inject(UUID) private readonly uuid: UuidPort
   ) {}
 
   async execute(cmd: RefreshTokenCommand): Promise<{ accessToken: string; refreshToken: string }> {

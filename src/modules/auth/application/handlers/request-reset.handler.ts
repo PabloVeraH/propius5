@@ -1,3 +1,4 @@
+import { Inject } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RequestPasswordResetCommand } from '../commands/request-password-reset.command';
 import { UserRepository } from '../../domain/repositories/user.repository';
@@ -7,16 +8,17 @@ import { NotifierPort } from '../ports/notifier.port';
 import { HasherPort } from '../ports/hasher.port';
 import { UuidPort } from '../ports/uuid.port';
 import { ClockPort } from '../ports/clock.port';
+import { USER_REPO, HASHER, NOTIFIER, REFRESH_REPO, UUID, CLOCK } from '../../tokens';
 
 @CommandHandler(RequestPasswordResetCommand)
 export class RequestPasswordResetHandler implements ICommandHandler<RequestPasswordResetCommand> {
   constructor(
-    private readonly users: UserRepository,
-    private readonly resetRepo: PasswordResetTokenRepository,
-    private readonly notifier: NotifierPort,
-    private readonly hasher: HasherPort,
-    private readonly uuid: UuidPort,
-    private readonly clock: ClockPort
+    @Inject(USER_REPO) private readonly users: UserRepository,
+    @Inject(REFRESH_REPO) private readonly resetRepo: PasswordResetTokenRepository,
+    @Inject(NOTIFIER) private readonly notifier: NotifierPort,
+    @Inject(HASHER) private readonly hasher: HasherPort,
+    @Inject(UUID) private readonly uuid: UuidPort,
+    @Inject(CLOCK) private readonly clock: ClockPort
   ) {}
 
   async execute(cmd: RequestPasswordResetCommand): Promise<void> {

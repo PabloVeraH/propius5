@@ -1,3 +1,4 @@
+import { Inject } from '@nestjs/common';
 import { CommandHandler, ICommandHandler, EventBus } from '@nestjs/cqrs';
 import { RegisterUserCommand } from '../commands/register-user.command';
 import { UserRepository } from '../../domain/repositories/user.repository';
@@ -7,13 +8,14 @@ import { HasherPort } from '../ports/hasher.port';
 import { UuidPort } from '../ports/uuid.port';
 import { User } from '../../domain/entities/user.entity';
 import { UserRegisteredEvent } from '../../domain/events/user-registered.event';
+import { USER_REPO, HASHER, UUID } from '../../tokens';
 
 @CommandHandler(RegisterUserCommand)
 export class RegisterUserHandler implements ICommandHandler<RegisterUserCommand> {
   constructor(
-    private readonly users: UserRepository,
-    private readonly hasher: HasherPort,
-    private readonly uuid: UuidPort,
+    @Inject(USER_REPO) private readonly users: UserRepository,
+    @Inject(HASHER) private readonly hasher: HasherPort,
+    @Inject(UUID) private readonly uuid: UuidPort,
     private readonly eventBus: EventBus
   ) {}
 

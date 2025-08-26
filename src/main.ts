@@ -23,6 +23,7 @@ async function bootstrap() {
   await prisma.enableShutdownHooks(app);
   
   await app.listen(Number(port));
-  console.log(`Application is running on: ${await app.getUrl()}`);
+  const url = await app.getUrl();
+  console.log(`Application is running on: ${url}`);
 }
 bootstrap();

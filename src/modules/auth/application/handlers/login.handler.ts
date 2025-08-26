@@ -1,3 +1,4 @@
+import { Inject } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { LoginCommand } from '../commands/login.command';
 import { UserRepository } from '../../domain/repositories/user.repository';
@@ -8,16 +9,17 @@ import { TokenPort } from '../ports/token.port';
 import { RefreshTokenRepository } from '../../domain/repositories/tokens.repository';
 import { ClockPort } from '../ports/clock.port';
 import { UuidPort } from '../ports/uuid.port';
+import { USER_REPO, HASHER, TOKEN, REFRESH_REPO, CLOCK, UUID } from '../../tokens';
 
 @CommandHandler(LoginCommand)
 export class LoginHandler implements ICommandHandler<LoginCommand> {
   constructor(
-    private readonly users: UserRepository,
-    private readonly hasher: HasherPort,
-    private readonly tokens: TokenPort,
-    private readonly refreshRepo: RefreshTokenRepository,
-    private readonly clock: ClockPort,
-    private readonly uuid: UuidPort
+    @Inject(USER_REPO) private readonly users: UserRepository,
+    @Inject(HASHER) private readonly hasher: HasherPort,
+    @Inject(TOKEN) private readonly tokens: TokenPort,
+    @Inject(REFRESH_REPO) private readonly refreshRepo: RefreshTokenRepository,
+    @Inject(CLOCK) private readonly clock: ClockPort,
+    @Inject(UUID) private readonly uuid: UuidPort
   ) {}
 
   async execute(cmd: LoginCommand): Promise<{ accessToken: string; refreshToken: string }> {
