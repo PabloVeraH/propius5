@@ -8,13 +8,14 @@ import { NotifierPort } from '../ports/notifier.port';
 import { HasherPort } from '../ports/hasher.port';
 import { UuidPort } from '../ports/uuid.port';
 import { ClockPort } from '../ports/clock.port';
-import { USER_REPO, HASHER, NOTIFIER, REFRESH_REPO, UUID, CLOCK } from '../../tokens';
+import { USER_REPO, HASHER, NOTIFIER, RESET_REPO, UUID, CLOCK } from '../../tokens';
+import { createHash } from 'crypto';
 
 @CommandHandler(RequestPasswordResetCommand)
 export class RequestPasswordResetHandler implements ICommandHandler<RequestPasswordResetCommand> {
   constructor(
     @Inject(USER_REPO) private readonly users: UserRepository,
-    @Inject(REFRESH_REPO) private readonly resetRepo: PasswordResetTokenRepository,
+    @Inject(RESET_REPO) private readonly resetRepo: PasswordResetTokenRepository,
     @Inject(NOTIFIER) private readonly notifier: NotifierPort,
     @Inject(HASHER) private readonly hasher: HasherPort,
     @Inject(UUID) private readonly uuid: UuidPort,
@@ -26,10 +27,10 @@ export class RequestPasswordResetHandler implements ICommandHandler<RequestPassw
     const user = await this.users.findByEmail(email);
     if (!user) return; // evitar user enumeration
 
-    const rawToken = this.uuid.generate(); // aleatorio opaco
-    const hashed = await this.hasher.hash(rawToken);
+    const rawToken = this.uuid.generate();
+    const digest = createHash('sha256').update(rawToken, 'utf8').digest('hex');
     const expiresAt = this.clock.addMinutes(this.clock.now(), 30);
-    await this.resetRepo.createHash(user.getId(), hashed, expiresAt);
+    await this.resetRepo.createHash(user.getId(), digest, expiresAt);
 
     // Enviar link con raw token
     await this.notifier.sendEmail(

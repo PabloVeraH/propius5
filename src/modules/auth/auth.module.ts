@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { JwtModule } from '@nestjs/jwt';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+
 import { AuthController } from './adapters/in/http/auth.controller';
 import { JwtStrategy } from './adapters/in/http/strategies/jwt.strategy';
 import { JwtAuthGuard } from './adapters/in/http/guards/jwt.guard';
@@ -17,10 +20,20 @@ import { JwtTokenAdapter } from './adapters/out/security/jwt.token.adapter';
 import { MailerAdapter } from './adapters/out/notification/mailer.adapter';
 import { UuidAdapter } from './adapters/out/security/uuid.adapter';
 
-import { UserPrismaRepository } from './adapters/out/persistence/user.prisma.repository';
-import { RefreshTokenPrismaRepository, PasswordResetTokenPrismaRepository } from './adapters/out/persistence/token.prisma.repository';
-import { MailService } from '../shared/mail/mail.service';
 import { USER_REPO, REFRESH_REPO, RESET_REPO, HASHER, TOKEN, NOTIFIER, UUID, CLOCK } from './tokens';
+
+// Entidades y repositorios TypeORM
+import { UserEntity } from './adapters/out/persistence/entities/user.entity';
+import { RoleEntity } from './adapters/out/persistence/entities/role.entity';
+import { PermissionEntity } from './adapters/out/persistence/entities/permission.entity';
+import { RefreshTokenEntity } from './adapters/out/persistence/entities/refresh-token.entity';
+import { PasswordResetTokenEntity } from './adapters/out/persistence/entities/password-reset-token.entity';
+
+import { UserTypeOrmRepository } from './adapters/out/persistence/user.typeorm.repository';
+
+import { RefreshTokenTypeOrmRepository, PasswordResetTokenTypeOrmRepository } from './adapters/out/persistence/token.typeorm.repository';
+
+import { MailService } from '../shared/mail/mail.service';
 
 class SystemClock {
   now() { return new Date(); }
@@ -28,39 +41,43 @@ class SystemClock {
   addDays(date: Date, days: number) { return new Date(date.getTime() + days * 24 * 60 * 60000); }
 }
 
+
+//console.log(`auth.module JWT_SECRET: ${ConfigService.get<string>('JWT_SECRET', '')}`);
+
 @Module({
   imports: [
+    ConfigModule,
     CqrsModule,
-    JwtModule.register({
-      secret: process.env.JWT_SECRET,
-      signOptions: { issuer: 'your-app' }
-    })
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.get<string>('JWT_SECRET', ''), // lee del .env
+        signOptions: { expiresIn: '1d' },
+      }),
+      // signOptions: { issuer: 'your-app' }
+    }),
+    TypeOrmModule.forFeature([
+      UserEntity, RoleEntity, PermissionEntity, RefreshTokenEntity, PasswordResetTokenEntity
+    ]),
   ],
   controllers: [AuthController],
   providers: [
-    // Strategies/guards
     JwtStrategy, JwtAuthGuard, RolesPermsGuard,
-
-    // Handlers
     RegisterUserHandler, LoginHandler, RefreshTokenHandler, RequestPasswordResetHandler, ResetPasswordHandler,
 
-    // Adapters OUT
     { provide: HASHER, useClass: BcryptHasherAdapter },
     { provide: TOKEN, useClass: JwtTokenAdapter },
     { provide: NOTIFIER, useClass: MailerAdapter },
     { provide: UUID, useClass: UuidAdapter },
     { provide: CLOCK, useValue: new SystemClock() },
 
-    // Repositorios (infra)
-    { provide: USER_REPO, useClass: UserPrismaRepository },
-    { provide: REFRESH_REPO, useClass: RefreshTokenPrismaRepository },
-    { provide: RESET_REPO, useClass: PasswordResetTokenPrismaRepository },
-    
-    // Servicios
+    // Cambios de Prisma -> TypeORM
+    { provide: USER_REPO, useClass: UserTypeOrmRepository },
+    { provide: REFRESH_REPO, useClass: RefreshTokenTypeOrmRepository },
+    { provide: RESET_REPO, useClass: PasswordResetTokenTypeOrmRepository },
+
     MailService,
-    // Bindings a puertos usados en handlers
-    // Nota: En handlers inyecta interfaces, aquí resolvemos con tokens + useExisting o @Inject(token) en constructor
   ],
-  exports: []
 })
 export class AuthModule {}

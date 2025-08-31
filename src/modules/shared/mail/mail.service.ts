@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import nodemailer, { SendMailOptions, Transporter } from 'nodemailer';
+import * as nodemailer from 'nodemailer';
+import { SendMailOptions, Transporter } from 'nodemailer';
 import * as path from 'path';
 import { promises as fs } from 'fs';
 import * as Handlebars from 'handlebars';
@@ -21,7 +22,7 @@ export type MailSendOptions = {
 @Injectable()
 export class MailService implements OnModuleInit {
   private readonly logger = new Logger(MailService.name);
-  private transporter!: Transporter;
+  private transporter: nodemailer.Transporter;
   private readonly defaultFrom = process.env.MAIL_FROM || 'No Reply <no-reply@example.com>';
   private readonly templatesDir =
     process.env.MAIL_TEMPLATES_DIR || path.join(process.cwd(), 'src', 'shared', 'mail', 'templates');

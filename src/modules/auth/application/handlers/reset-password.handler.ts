@@ -5,12 +5,13 @@ import { PasswordResetTokenRepository } from '../../domain/repositories/tokens.r
 import { HasherPort } from '../ports/hasher.port';
 import { UserRepository } from '../../domain/repositories/user.repository';
 import { PasswordPolicyViolationError } from '../../domain/exceptions/domain.exceptions';
-import { USER_REPO, HASHER, REFRESH_REPO } from '../../tokens';
+import { USER_REPO, HASHER, RESET_REPO } from '../../tokens';
+import { createHash } from 'crypto';
 
 @CommandHandler(ResetPasswordCommand)
 export class ResetPasswordHandler implements ICommandHandler<ResetPasswordCommand> {
   constructor(
-    @Inject(REFRESH_REPO) private readonly resetRepo: PasswordResetTokenRepository,
+    @Inject(RESET_REPO) private readonly resetRepo: PasswordResetTokenRepository,
     @Inject(HASHER) private readonly hasher: HasherPort,
     @Inject(USER_REPO) private readonly users: UserRepository
   ) {}
@@ -19,8 +20,8 @@ export class ResetPasswordHandler implements ICommandHandler<ResetPasswordComman
     if (!cmd.newPassword || cmd.newPassword.length < 8) throw new PasswordPolicyViolationError();
 
     // Hash del token entrante y consumo atómico
-    const candidateHash = await this.hasher.hash(cmd.token); // mejor usar compare contra cada registro; alternativamente usar un HMAC estable
-    const consumed = await this.resetRepo.consumeIfValid(candidateHash);
+    const candidateDigest = createHash('sha256').update(cmd.token, 'utf8').digest('hex');
+    const consumed = await this.resetRepo.consumeIfValid(candidateDigest);
     if (!consumed) return; // token inválido/expirado o ya usado
 
     const user = await this.users.findById(consumed.userId);

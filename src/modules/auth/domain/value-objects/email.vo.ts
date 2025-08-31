@@ -2,11 +2,16 @@ export class Email {
   private constructor(private readonly value: string) {
     const v = value?.trim().toLowerCase();
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!v || !re.test(v)) throw new Error('Invalid email');
+    if (!v || !re.test(v)) {
+      throw new Error(`Invalid email: '${value}' (processed: '${v}')`);
+    }
     this.value = v;
   }
 
-  static create(value: string): Email {
+  static create(value: string | undefined | null): Email {
+    if (value === undefined || value === null) {
+      throw new Error('Email cannot be undefined or null');
+    }
     return new Email(value);
   }
 
