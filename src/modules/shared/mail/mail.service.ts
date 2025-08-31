@@ -25,7 +25,7 @@ export class MailService implements OnModuleInit {
   private transporter: nodemailer.Transporter;
   private readonly defaultFrom = process.env.MAIL_FROM || 'No Reply <no-reply@example.com>';
   private readonly templatesDir =
-    process.env.MAIL_TEMPLATES_DIR || path.join(process.cwd(), 'src', 'shared', 'mail', 'templates');
+    process.env.MAIL_TEMPLATES_DIR || path.join(process.cwd(), 'src', 'modules', 'shared', 'mail', 'templates');
   private readonly templateCache = new Map<string, Handlebars.TemplateDelegate>();
 
   async onModuleInit(): Promise<void> {
